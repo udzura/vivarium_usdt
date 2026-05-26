@@ -9,7 +9,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     module.define_singleton_method("invoke_raise_probe", function!(invoke_raise_probe, 1))?;
 
     let kernel = ruby.module_kernel();
-    kernel.define_singleton_method(
+    kernel.define_method(
         "__helper_get_hash_from_name",
         function!(__helper_get_hash_from_name, 1),
     )?;

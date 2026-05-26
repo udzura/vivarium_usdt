@@ -5,7 +5,7 @@ require "test_helper"
 class VivariumUsdtTest < Test::Unit::TestCase
   test "VERSION" do
     assert do
-      ::VivariumUsdt.const_defined?(:VERSION)
+      ::Vivarium::Usdt.const_defined?(:VERSION)
     end
   end
 
