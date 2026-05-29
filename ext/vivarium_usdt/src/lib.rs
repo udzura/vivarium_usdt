@@ -4,9 +4,9 @@ use magnus::{function, prelude::*, Error, Ruby};
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
     let module = ruby.define_module("VivariumUsdt")?;
-    module.define_singleton_method("invoke_start_probe", function!(invoke_start_probe, 1))?;
-    module.define_singleton_method("invoke_stop_probe", function!(invoke_stop_probe, 1))?;
-    module.define_singleton_method("invoke_raise_probe", function!(invoke_raise_probe, 1))?;
+    module.define_singleton_method("invoke_start_probe", function!(invoke_start_probe, 3))?;
+    module.define_singleton_method("invoke_stop_probe", function!(invoke_stop_probe, 3))?;
+    module.define_singleton_method("invoke_raise_probe", function!(invoke_raise_probe, 3))?;
 
     let kernel = ruby.module_kernel();
     kernel.define_method(
@@ -16,29 +16,29 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     Ok(())
 }
 
-pub(crate) fn invoke_start_probe(method_id: i64) -> Result<(), Error> {
+pub(crate) fn invoke_start_probe(method_id: i64, file_id: i64, lineno: i64) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(vivarium_usdt, start_probe, method_id);
+        probe::probe!(vivarium_usdt, start_probe, method_id, file_id, lineno);
     }
     Ok(())
 }
 
-pub(crate) fn invoke_stop_probe(method_id: i64) -> Result<(), Error> {
+pub(crate) fn invoke_stop_probe(method_id: i64, file_id: i64, lineno: i64) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(vivarium_usdt, stop_probe, method_id);
+        probe::probe!(vivarium_usdt, stop_probe, method_id, file_id, lineno);
     }
     Ok(())
 }
 
-pub(crate) fn invoke_raise_probe(error_id: i64) -> Result<(), Error> {
+pub(crate) fn invoke_raise_probe(error_id: i64, file_id: i64, lineno: i64) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(vivarium_usdt, raise_probe, error_id);
+        probe::probe!(vivarium_usdt, raise_probe, error_id, file_id, lineno);
     }
     Ok(())
 }

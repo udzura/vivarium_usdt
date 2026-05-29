@@ -11,6 +11,10 @@ module Vivarium
         @__error_id_table ||= {}
       end
       private :__error_id_table
+      def __file_id_table
+        @__file_id_table ||= {}
+      end
+      private :__file_id_table
 
       def get_method_name(u64)
         __method_id_table[u64]
@@ -20,28 +24,41 @@ module Vivarium
         __error_id_table[u64]
       end
 
+      def get_file_name(u64)
+        __file_id_table[u64]
+      end
+
       def register_or_resolve_method(method_signature)
         id = __helper_get_hash_from_name(method_signature)
         __method_id_table[id] ||= method_signature
         id
       end
 
-      def start(defined_class, method_name)
-        method_signature = "#{defined_class}##{method_name}"
-        method_id = register_or_resolve_method(method_signature)
-        ::VivariumUsdt.invoke_start_probe(method_id)
+      def register_or_resolve_file(file_name)
+        id = __helper_get_hash_from_name(file_name)
+        __file_id_table[id] ||= file_name
+        id
       end
 
-      def stop(defined_class, method_name)
+      def start(defined_class, method_name, file: nil, lineno: -1)
         method_signature = "#{defined_class}##{method_name}"
         method_id = register_or_resolve_method(method_signature)
-        ::VivariumUsdt.invoke_stop_probe(method_id)
+        file_id = file ? register_or_resolve_file(file) : -1
+        ::VivariumUsdt.invoke_start_probe(method_id, file_id, lineno)
       end
 
-      def raise(error_name)
+      def stop(defined_class, method_name, file: nil, lineno: -1)
+        method_signature = "#{defined_class}##{method_name}"
+        method_id = register_or_resolve_method(method_signature)
+        file_id = file ? register_or_resolve_file(file) : -1
+        ::VivariumUsdt.invoke_stop_probe(method_id, file_id, lineno)
+      end
+
+      def raise(error_name, file: nil, lineno: -1)
         error_id = __helper_get_hash_from_name(error_name)
         __error_id_table[error_id] ||= error_name
-        ::VivariumUsdt.invoke_raise_probe(error_id)
+        file_id = file ? register_or_resolve_file(file) : -1
+        ::VivariumUsdt.invoke_raise_probe(error_id, file_id, lineno)
       end
     end
   end
