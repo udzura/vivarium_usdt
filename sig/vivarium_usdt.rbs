@@ -1,4 +1,29 @@
 module VivariumUsdt
-  VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+  def self.invoke_start_probe: (Integer method_id, Integer file_id, Integer lineno) -> void
+  def self.invoke_stop_probe: (Integer method_id, Integer file_id, Integer lineno) -> void
+  def self.invoke_raise_probe: (Integer error_id, Integer message_id, Integer file_id, Integer lineno) -> void
+end
+
+module Kernel
+  private def __helper_get_hash_from_name: (String name) -> Integer
+end
+
+module Vivarium
+  module Usdt
+    VERSION: String
+
+    def self.get_method_name: (Integer u64) -> String?
+    def self.get_error_name: (Integer u64) -> String?
+    def self.get_message_name: (Integer u64) -> String?
+    def self.get_file_name: (Integer u64) -> String?
+
+    def self.register_or_resolve_method: (String method_signature) -> Integer
+    def self.register_or_resolve_error: (String error_name) -> Integer
+    def self.register_or_resolve_message: (String message) -> Integer
+    def self.register_or_resolve_file: (String file_name) -> Integer
+
+    def self.start: ((String | Symbol | Module) defined_class, (String | Symbol) method_name, ?file: String?, ?lineno: Integer) -> void
+    def self.stop: ((String | Symbol | Module) defined_class, (String | Symbol) method_name, ?file: String?, ?lineno: Integer) -> void
+    def self.raise: (String error_name, String message, ?file: String?, ?lineno: Integer) -> void
+  end
 end
