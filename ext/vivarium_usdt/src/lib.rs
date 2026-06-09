@@ -7,62 +7,54 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     module.define_singleton_method("invoke_start_probe", function!(invoke_start_probe, 3))?;
     module.define_singleton_method("invoke_stop_probe", function!(invoke_stop_probe, 3))?;
     module.define_singleton_method("invoke_raise_probe", function!(invoke_raise_probe, 4))?;
-
-    let kernel = ruby.module_kernel();
-    kernel.define_method(
-        "__helper_get_hash_from_name",
-        function!(__helper_get_hash_from_name, 1),
-    )?;
     Ok(())
 }
 
-pub(crate) fn invoke_start_probe(method_id: i64, file_id: i64, lineno: i64) -> Result<(), Error> {
+fn to_fixed_cstr(s: &str) -> [u8; 128] {
+    let mut buf = [0u8; 128];
+    let bytes = s.as_bytes();
+    let len = bytes.len().min(127);
+    buf[..len].copy_from_slice(&bytes[..len]);
+    buf
+}
+
+pub(crate) fn invoke_start_probe(method_name: String, file: String, lineno: i64) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(vivarium_usdt, start_probe, method_id, file_id, lineno);
+        let m = to_fixed_cstr(&method_name);
+        let f = to_fixed_cstr(&file);
+        probe::probe!(vivarium_usdt, start_probe, m.as_ptr(), f.as_ptr(), lineno);
     }
     Ok(())
 }
 
-pub(crate) fn invoke_stop_probe(method_id: i64, file_id: i64, lineno: i64) -> Result<(), Error> {
+pub(crate) fn invoke_stop_probe(method_name: String, file: String, lineno: i64) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(vivarium_usdt, stop_probe, method_id, file_id, lineno);
+        let m = to_fixed_cstr(&method_name);
+        let f = to_fixed_cstr(&file);
+        probe::probe!(vivarium_usdt, stop_probe, m.as_ptr(), f.as_ptr(), lineno);
     }
     Ok(())
 }
 
 pub(crate) fn invoke_raise_probe(
-    error_id: i64,
-    message_id: i64,
-    file_id: i64,
+    error_name: String,
+    message: String,
+    file: String,
     lineno: i64,
 ) -> Result<(), Error> {
     #[cfg(target_os = "linux")]
     {
         use probe::probe;
-        probe::probe!(
-            vivarium_usdt,
-            raise_probe,
-            error_id,
-            message_id,
-            file_id,
-            lineno
-        );
+        let e = to_fixed_cstr(&error_name);
+        let msg = to_fixed_cstr(&message);
+        let f = to_fixed_cstr(&file);
+        probe::probe!(vivarium_usdt, raise_probe, e.as_ptr(), msg.as_ptr(), f.as_ptr(), lineno);
     }
     Ok(())
-}
-
-pub(crate) fn __helper_get_hash_from_name(name: String) -> Result<i64, Error> {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
-    let mut hasher = DefaultHasher::new();
-    name.hash(&mut hasher);
-    let hash = hasher.finish() as i64;
-    Ok(hash)
 }
 
 #[cfg(test)]
